@@ -1,5 +1,5 @@
 
-# -------------------- 1. ایمپورت کتابخانه‌ها --------------------
+# ---------------------Import libraries-----------------------
 import uvicorn
 from  fastapi import FastAPI, File, UploadFile
 from fastapi.responses import JSONResponse
@@ -9,9 +9,8 @@ import io
 import tensorflow as tf
 from tensorflow.keras.models import load_model
 
-# -------------------- 2. بارگذاری مدل --------------------
 
-
+# -----------------Loading the model--------------------
 
 import tensorflow.keras.backend as K
 
@@ -26,11 +25,11 @@ def focal_loss(gamma=2., alpha=0.75):
 
 model = tf.keras.models.load_model('my_model.h5' , custom_objects={'focal_loss_fixed': focal_loss()})  
 
-# -------------------- 3. ساخت اپلیکیشن FastAPI --------------------
+# ------------------Creating a FastAPI app--------------------
 app = FastAPI(title="Pneumonia Detection API")
 
 
-# -------------------- 4. پیش‌پردازش تصویر --------------------
+# ---------------------Image preprocessing--------------------
 def preprocess_image(image_bytes):
     image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
     image = image.resize((224, 224))
@@ -38,22 +37,22 @@ def preprocess_image(image_bytes):
     image = np.expand_dims(image, axis=0)
     return image
 
-# -------------------- 5. ایجاد endpoint اصلی --------------------
+# --------------------Setting up the main endpoint--------------------
 @app.post("/predict")
 async def predict(file: UploadFile = File(...)):
     try:
-        # خواندن و پیش‌پردازش تصویر
+        # Read and preprocess image
         image_bytes = await file.read()
         img = preprocess_image(image_bytes)
 
-        # پیش‌بینی با مدل
+        # Prediction using the model
         pred_prob = model.predict(img)[0][0]
 
-        # تفسیر نتیجه
+        # Result 
         result = "Pneumonia" if pred_prob > 0.5 else "Normal"
         confidence = round(float(pred_prob if pred_prob > 0.5 else 1 - pred_prob), 3)
 
-        # بازگرداندن پاسخ
+        # Return response
         return JSONResponse(content={
             "prediction": result,
             "confidence": confidence
@@ -64,12 +63,11 @@ async def predict(file: UploadFile = File(...)):
             "error": str(e)
         }, status_code=500)
 
-# -------------------- 6. اجرای سرور (در ترمینال) --------------------
-# دستور اجرا:
-=======
 
 
-# -------------------- 1. ایمپورت کتابخانه‌ها --------------------
+
+
+# --------------------Import libraries------------------
 import uvicorn
 from  fastapi import FastAPI, File, UploadFile
 from fastapi.responses import JSONResponse
@@ -79,9 +77,10 @@ import io
 import tensorflow as tf
 from tensorflow.keras.models import load_model
 
-# -------------------- 2. بارگذاری مدل --------------------
 
 
+
+# -------------------Load model, but first we need to define focal loss function-------------------
 
 import tensorflow.keras.backend as K
 
@@ -94,13 +93,15 @@ def focal_loss(gamma=2., alpha=0.75):
         return K.mean(weight * cross_entropy, axis=-1)
     return focal_loss_fixed
 
-model = tf.keras.models.load_model('my_model.h5' , custom_objects={'focal_loss_fixed': focal_loss()})  
+model = tf.keras.models.load_model('my_model.h5' , custom_objects={'focal_loss_fixed': focal_loss()})
 
-# -------------------- 3. ساخت اپلیکیشن FastAPI --------------------
+
+
+# -------------------Creating a FastAPI app --------------------
 app = FastAPI(title="Pneumonia Detection API")
 
 
-# -------------------- 4. پیش‌پردازش تصویر --------------------
+# -------------------Image preprocess--------------------
 def preprocess_image(image_bytes):
     image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
     image = image.resize((224, 224))
@@ -108,22 +109,22 @@ def preprocess_image(image_bytes):
     image = np.expand_dims(image, axis=0)
     return image
 
-# -------------------- 5. ایجاد endpoint اصلی --------------------
+# ------------------Creating the main endpoint--------------------
 @app.post("/predict")
 async def predict(file: UploadFile = File(...)):
     try:
-        # خواندن و پیش‌پردازش تصویر
+        # Read and preprocess image
         image_bytes = await file.read()
         img = preprocess_image(image_bytes)
 
-        # پیش‌بینی با مدل
+        # prediction 
         pred_prob = model.predict(img)[0][0]
 
-        # تفسیر نتیجه
+        # result
         result = "Pneumonia" if pred_prob > 0.5 else "Normal"
         confidence = round(float(pred_prob if pred_prob > 0.5 else 1 - pred_prob), 3)
 
-        # بازگرداندن پاسخ
+        #Return response
         return JSONResponse(content={
             "prediction": result,
             "confidence": confidence
@@ -134,7 +135,5 @@ async def predict(file: UploadFile = File(...)):
             "error": str(e)
         }, status_code=500)
 
-# -------------------- 6. اجرای سرور (در ترمینال) --------------------
-# دستور اجرا:
+
 >>>>>>> dbc88e5 (Initial commit)
-# uvicorn main:app --reload
