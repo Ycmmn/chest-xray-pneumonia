@@ -1,4 +1,4 @@
-# -------------------- 1. ایمپورت کتابخانه‌ها --------------------
+#-------------import Libraries------------ 
 import os
 import numpy as np
 import matplotlib.pyplot as plt
@@ -15,10 +15,10 @@ from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau
 from tensorflow.keras.metrics import Precision, Recall
 import tensorflow.keras.backend as K
 
-# -------------------- 2. مسیر دیتاست --------------------
+# --------------------dataste path--------------------
 masir_data = r"C:\Users\Yasaman\Desktop"
 
-# -------------------- 3. نرمال‌سازی و بارگذاری داده‌ها --------------------
+# -------------------Loading and normalizing data--------------------
 train_data = ImageDataGenerator(
     rescale=1./255,
     rotation_range=20,
@@ -58,7 +58,7 @@ x_test = test_data.flow_from_directory(
     shuffle=False
 )
 
-# -------------------- 4. تعریف focal loss --------------------
+# -------------------definition of Focal Loss--------------------
 def focal_loss(gamma=2., alpha=0.75):
     def focal_loss_fixed(y_true, y_pred):
         epsilon = K.epsilon()
@@ -68,27 +68,27 @@ def focal_loss(gamma=2., alpha=0.75):
         return K.mean(weight * cross_entropy, axis=-1)
     return focal_loss_fixed
 
-# -------------------- 5. بارگذاری مدل پایه ResNet50 --------------------
+# ------------------Loading the base ResNet50 model-------------------
 base_model = ResNet50(weights='imagenet', include_top=False, input_shape=(224, 224, 3))
 base_model.trainable = True
 for layer in base_model.layers[:-80]:
     layer.trainable = False
 
-# -------------------- 6. ساخت مدل نهایی --------------------
+# -------------------Creating the final model-------------------
 x = base_model.output
 x = GlobalAveragePooling2D()(x)
 x = Dense(128, activation='relu')(x)
 predictions = Dense(1, activation='sigmoid')(x)
 model = Model(inputs=base_model.input, outputs=predictions)
 
-# -------------------- 7. کامپایل مدل --------------------
+# ------------------Compiling the model-------------------
 model.compile(
     optimizer='adam',
     loss=focal_loss(),
     metrics=['accuracy', Precision(name="precision"), Recall(name="recall")]
 )
 
-# -------------------- 8. وزن‌دهی به کلاس‌ها --------------------
+# -------------------Class weighting-------------------
 class_weights = class_weight.compute_class_weight(
     class_weight='balanced',
     classes=np.unique(x_train.classes),
@@ -96,11 +96,11 @@ class_weights = class_weight.compute_class_weight(
 )
 class_weights_dict = dict(enumerate(class_weights))
 
-# -------------------- 9. Callbacks --------------------
+# --------------------Callbacks--------------------
 early_stop = EarlyStopping(monitor='val_loss', patience=3, restore_best_weights=True)
 reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.2, patience=2, min_lr=1e-6)
 
-# -------------------- 10. آموزش مدل --------------------
+# -------------------Training the model-------------------
 model.fit(
     x_train,
     validation_data=x_val,
@@ -109,28 +109,28 @@ model.fit(
     callbacks=[early_stop, reduce_lr]
 )
 
-# -------------------- 11. ارزیابی نهایی --------------------
+# ------------------Final evaluation--------------------
 model.evaluate(x_test)
 
-# -------------------- 12. پیش‌بینی --------------------
+# -------------------Prediction-------------------
 x_test.reset()
 pred = model.predict(x_test)
 y_true_labels = x_test.classes
 
 
-# محاسبه بهترین threshold
+# -------------------Calculating the best threshold-----------------
 precision_vals, recall_vals, thresholds = precision_recall_curve(y_true_labels, pred)
 f1_scores = 2 * (precision_vals * recall_vals) / (precision_vals + recall_vals + 1e-6)
 best_threshold = thresholds[np.argmax(f1_scores)]
 print(f"Best threshold: {best_threshold:.2f}")
 
-# اعمال threshold
+# ---------------------Applying the threshold----------------
 y_pred_label = (pred > best_threshold).astype(int).flatten()
 
-# -------------------- 13. گزارش عملکرد --------------------
+# -----------------Performance report--------------------
 print(classification_report(y_true_labels, y_pred_label, target_names=['Normal', 'Pneumonia']))
 
-# -------------------- 14. confusion matrix --------------------
+# -------------------confusion matrix------------------
 cm = confusion_matrix(y_true_labels, y_pred_label)
 sns.heatmap(cm, annot=True, fmt='d', cmap='Blues')
 plt.xlabel("Predicted")
