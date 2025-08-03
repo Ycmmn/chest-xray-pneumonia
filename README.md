@@ -1,7 +1,4 @@
 
-
-
-````markdown
 # Pneumonia Detection with ResNet50 and FastAPI
 
 This project implements a deep learning model for detecting pneumonia from chest X-ray images using a fine-tuned ResNet50 architecture with focal loss.  
@@ -33,7 +30,7 @@ Install dependencies with:
 
 ```bash
 pip install tensorflow fastapi uvicorn numpy pillow scikit-learn matplotlib seaborn
-````
+```
 
 ---
 
